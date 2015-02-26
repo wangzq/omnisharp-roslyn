@@ -11,7 +11,8 @@
         "Microsoft.Framework.Logging.Console": "1.0.0-beta2",
         "Microsoft.Framework.ConfigurationModel.Json": "1.0.0-beta2",
         "Microsoft.Framework.Cache.Memory": "1.0.0-beta2",
-        "Microsoft.Composition": "1.0.27"
+        "Microsoft.Composition": "1.0.27",
+        "editorconfig": "0.12.1"
     },
     "commands": {
         "omnisharp": "run"

@@ -4,6 +4,7 @@ using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.Diagnostics;
 using Microsoft.AspNet.Hosting;
 using Microsoft.AspNet.Mvc;
+using Microsoft.CodeAnalysis.Options;
 using Microsoft.Framework.Cache.Memory;
 using Microsoft.Framework.ConfigurationModel;
 using Microsoft.Framework.DependencyInjection;
@@ -55,6 +56,11 @@ namespace OmniSharp
             // Add the omnisharp workspace to the container
             services.AddInstance(Workspace);
 
+            services.Configure<FormattingOptions>(opt =>
+            {
+                //Todo configure workspace defaults
+            });
+
             // Caching
             services.AddSingleton<IMemoryCache, MemoryCache>();
             services.AddSingleton<IMetadataFileReferenceCache, MetadataFileReferenceCache>();
@@ -74,6 +80,8 @@ namespace OmniSharp
 
             // Add the code action provider
             services.AddSingleton<ICodeActionProvider, EmptyCodeActionProvider>();
+
+            services.AddSingleton<IFormattingService, FormattingService>();
             
 #if ASPNET50
             services.AddSingleton<ICodeActionProvider, NRefactoryCodeActionProvider>();

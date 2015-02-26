@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using OmniSharp.Models;
+using OmniSharp.Services;
 
 namespace OmniSharp.Tests
 {
@@ -180,8 +181,7 @@ class C {
         private static async Task<IEnumerable<TextChange>> FormattingChangesForRange(FormatRangeRequest req)
         {
             var workspace = TestHelpers.CreateSimpleWorkspace(req.Buffer, req.FileName);
-            var controller = new OmnisharpController(workspace, null);
-
+            var controller = new FormattingController(workspace, new FormattingService(null));
             return (await controller.FormatRange(req)).Changes;
         }
     }
