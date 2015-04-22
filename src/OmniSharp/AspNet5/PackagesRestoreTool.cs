@@ -53,7 +53,7 @@ namespace OmniSharp.AspNet5
                     _semaphore.Wait();
                     try
                     {
-                        exitCode = DoRun(project, 1);
+                        exitCode = DoRun(project);
 
                         _context.Connection.Post(new Message()
                         {
@@ -76,7 +76,7 @@ namespace OmniSharp.AspNet5
             });
         }
 
-        private int DoRun(Project project, int retry)
+        private int DoRun(Project project)
         {
             var psi = new ProcessStartInfo()
             {
@@ -98,23 +98,7 @@ namespace OmniSharp.AspNet5
                 return restoreProcess.ExitCode;
             }
 
-            // watch dog to workaround dnu restore hangs
             var lastSignal = DateTime.UtcNow;
-            var wasKilledByWatchDog = false;
-            var watchDog = Task.Factory.StartNew(async () =>
-            {
-                while (!restoreProcess.HasExited)
-                {
-                    if (DateTime.UtcNow - lastSignal > TimeSpan.FromSeconds(20))
-                    {
-                        _logger.WriteError("killing restore comment ({0}) because it seems be stuck. retrying {1} more time(s)...", restoreProcess.Id, retry);
-                        wasKilledByWatchDog = true;
-                        restoreProcess.KillAll();
-                    }
-                    await Task.Delay(TimeSpan.FromSeconds(10));
-                }
-            });
-
             restoreProcess.OutputDataReceived += (sender, e) =>
             {
                 _logger.WriteInformation(e.Data);
@@ -128,11 +112,17 @@ namespace OmniSharp.AspNet5
 
             restoreProcess.BeginOutputReadLine();
             restoreProcess.BeginErrorReadLine();
-            restoreProcess.WaitForExit();
 
-            return wasKilledByWatchDog && retry > 0
-                ? DoRun(project, retry - 1)
-                : restoreProcess.ExitCode;
+            while (!restoreProcess.WaitForExit(100))
+            {
+                if (DateTime.UtcNow - lastSignal > TimeSpan.FromSeconds(20))
+                {
+                    _logger.WriteWarning("pretending restore is done because we have not heard back in a while.");
+                    return -1;
+                }
+            }
+
+            return restoreProcess.ExitCode;
         }
     }
 }
