@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc;
@@ -53,30 +54,47 @@ namespace OmniSharp
                 var repositoryProvider = new OmniSharpSourceRepositoryProvider(projectPath);
                 var repos = repositoryProvider.GetRepositories().ToArray();
 
+                var allTasks = new List<Task>();
+                var throttler = new SemaphoreSlim(initialCount: 1);
+                var allResults = new List<SimpleSearchMetadata>();
+
                 foreach (var repo in repos)
                 {
-                    var resource = await repo.GetResourceAsync<SimpleSearchResource>();
-                    if (resource != null)
-                    {
-                        tasks.Add(resource.Search(request.Search, filter, 0, 50, token));
-                    }
-                }
+                    // do an async wait until we can schedule again
+                    await throttler.WaitAsync();
 
-                var results = await Task.WhenAll(tasks);
-                return MergeResults(results, repos);
+                    // using Task.Run(...) to run the lambda in its own parallel
+                    // flow on the threadpool
+                    allTasks.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var resource = await repo.GetResourceAsync<SimpleSearchResource>();
+                            if (resource != null)
+                            {
+                                var results = await resource.Search(request.Search, filter, 0, 50, token);
+                                allResults.AddRange(results);
+                            }
+                        }
+                        finally
+                        {
+                            throttler.Release();
+                        }
+                    }));
+                }
+                return MergeResults(allResults, repos);
             }
 
             return new PackageSearchResponse();
         }
 
-        private PackageSearchResponse MergeResults(IEnumerable<SimpleSearchMetadata>[] results, IEnumerable<SourceRepository> repos)
+        private PackageSearchResponse MergeResults(IEnumerable<SimpleSearchMetadata> results, IEnumerable<SourceRepository> repos)
         {
             var comparer = new PackageIdentityComparer();
             return new PackageSearchResponse()
             {
                 Sources = repos.Select(repo => repo.PackageSource.Source),
                 Packages = results
-                    .SelectMany(metadata => metadata)
                     .GroupBy(metadata => metadata.Identity.Id)
                     .Select(metadataGroup => metadataGroup.OrderByDescending(metadata => metadata.Identity, comparer).First())
                     .OrderBy(metadata => metadata.Identity.Id)
