@@ -106,6 +106,8 @@ namespace OmniSharp
                         }
                     }));
                 }
+
+                await Task.WhenAll(allTasks);
                 return MergeResults(allResults, repos);
             }
 
