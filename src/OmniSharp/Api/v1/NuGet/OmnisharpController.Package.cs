@@ -8,6 +8,7 @@ using Microsoft.AspNet.Mvc;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Recommendations;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.Framework.Logging;
 #if DNX451
 using NuGet.Logging;
 using NuGet.Packaging.Core;
@@ -24,8 +25,15 @@ using OmniSharp.NuGet;
 namespace OmniSharp
 {
 #if DNX451
-    public partial class OmnisharpController
+    public class PackageController
     {
+        private Microsoft.Framework.Logging.ILogger logger;
+
+        public PackageController(ILoggerFactory loggerFactory)
+        {
+            logger = loggerFactory.CreateLogger<PackageController>();
+        }
+
         [HttpPost("packagesearch")]
         public async Task<PackageSearchResponse> PackageSearch(PackageSearchRequest request)
         {
@@ -60,6 +68,7 @@ namespace OmniSharp
 
                 foreach (var repo in repos)
                 {
+                    logger.LogInformation($"Searching {repo} for {request.Search}");
                     // do an async wait until we can schedule again
                     await throttler.WaitAsync();
 
@@ -73,6 +82,7 @@ namespace OmniSharp
                             if (resource != null)
                             {
                                 var results = await resource.Search(request.Search, filter, 0, 50, token);
+                                logger.LogInformation($"Found {results.Count()} results from {repo}");
                                 allResults.AddRange(results);
                             }
                         }
