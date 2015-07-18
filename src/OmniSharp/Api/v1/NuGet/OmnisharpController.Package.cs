@@ -1,3 +1,4 @@
+using System;
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -27,12 +28,14 @@ namespace OmniSharp
 #if DNX451
     public class PackageController
     {
-        private Microsoft.Framework.Logging.ILogger logger;
+        private Microsoft.Framework.Logging.ILogger _logger;
+        private static CancellationTokenSource _tokenSource;
 
         public PackageController(ILoggerFactory loggerFactory)
         {
-            logger = loggerFactory.CreateLogger<PackageController>();
+            _logger = loggerFactory.CreateLogger<PackageController>();
         }
+
 
         [HttpPost("packagesearch")]
         public async Task<PackageSearchResponse> PackageSearch(PackageSearchRequest request)
@@ -51,7 +54,13 @@ namespace OmniSharp
                 if (request.PackageTypes == null)
                     request.PackageTypes = Enumerable.Empty<string>();
 
-                var token = CancellationToken.None;
+                if (_tokenSource != null)
+                {
+                    _logger.LogInformation("cancelling");
+                    _tokenSource.Cancel();
+                }
+                _tokenSource = new CancellationTokenSource();
+
                 var filter = new SearchFilter()
                 {
                     SupportedFrameworks = request.SupportedFrameworks,
@@ -63,12 +72,13 @@ namespace OmniSharp
                 var repos = repositoryProvider.GetRepositories().ToArray();
 
                 var allTasks = new List<Task>();
-                var throttler = new SemaphoreSlim(initialCount: 1);
+                var concurrency = PlatformHelper.IsMono ? 10 : 10;
+                var throttler = new SemaphoreSlim(initialCount: concurrency);
                 var allResults = new List<SimpleSearchMetadata>();
 
                 foreach (var repo in repos)
                 {
-                    logger.LogInformation($"Searching {repo} for {request.Search}");
+                    _logger.LogInformation($"Searching {repo} for {request.Search}");
                     // do an async wait until we can schedule again
                     await throttler.WaitAsync();
 
@@ -81,10 +91,14 @@ namespace OmniSharp
                             var resource = await repo.GetResourceAsync<SimpleSearchResource>();
                             if (resource != null)
                             {
-                                var results = await resource.Search(request.Search, filter, 0, 50, token);
-                                logger.LogInformation($"Found {results.Count()} results from {repo}");
+                                var results = await resource.Search(request.Search, filter, 0, 50, _tokenSource.Token);
+                                _logger.LogInformation($"Found {results.Count()} results for {request.Search} from {repo}");
                                 allResults.AddRange(results);
                             }
+                        }
+                        catch(OperationCanceledException)
+                        {
+                            _logger.LogInformation("search cancelled");
                         }
                         finally
                         {
