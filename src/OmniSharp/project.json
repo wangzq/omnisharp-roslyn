@@ -16,7 +16,8 @@
     "Microsoft.Framework.Logging.Console": "1.0.0-beta4",
     "Microsoft.Framework.ConfigurationModel.Json": "1.0.0-beta4",
     "Microsoft.Framework.Caching.Memory": "1.0.0-beta4",
-    "Microsoft.Framework.FileSystemGlobbing": "1.0.0-beta4"
+    "Microsoft.Framework.FileSystemGlobbing": "1.0.0-beta4",
+    "StyleCop.Analyzers": "1.0.0-beta015"
   },
   "commands": {
     "omnisharp": "run"

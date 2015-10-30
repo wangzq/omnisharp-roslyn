@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,6 +47,7 @@ namespace OmniSharp.Dnx
         private readonly IEventEmitter _emitter;
         private readonly DirectoryEnumerator _directoryEnumerator;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly IDictionary<ProjectId, ProjectInfo> _projects;
 
         [ImportingConstructor]
         public DnxProjectSystem(OmnisharpWorkspace workspace,
@@ -66,6 +68,7 @@ namespace OmniSharp.Dnx
             _watcher = watcher;
             _emitter = emitter;
             _directoryEnumerator = new DirectoryEnumerator(loggerFactory);
+            _projects = new Dictionary<ProjectId, ProjectInfo>();
 
             lifetime?.ApplicationStopping.Register(OnShutdown);
         }
@@ -166,6 +169,7 @@ namespace OmniSharp.Dnx
 
                                 _workspace.AddProject(projectInfo);
                                 _context.WorkspaceMapping[id] = frameworkProject;
+                                _projects.Add(id, projectInfo);
                             }
 
                             lock (frameworkProject.PendingProjectReferences)
@@ -199,6 +203,7 @@ namespace OmniSharp.Dnx
 
                         var frameworkProject = project.ProjectsByFramework[val.Framework.FrameworkName];
                         var projectId = frameworkProject.ProjectId;
+                        var referenceProjectInfo = _projects[projectId];
 
                         var metadataReferences = new List<MetadataReference>();
                         var projectReferences = new List<Microsoft.CodeAnalysis.ProjectReference>();
@@ -217,7 +222,22 @@ namespace OmniSharp.Dnx
                             var metadataReference = _metadataFileReferenceCache.GetMetadataReference(file);
                             frameworkProject.FileReferences[file] = metadataReference;
                             metadataReferences.Add(metadataReference);
+
+                            var libReference = file
+                                .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+                                .IndexOf("\\lib\\");
+
+                            if (libReference > -1)
+                            {
+                                var analyzerDirectory = Path.Combine(file.Substring(0, libReference), "analyzers\\dotnet\\");
+                                if (Directory.Exists(analyzerDirectory))
+                                {
+                                    _workspace.AddAnalyzer(projectId, Directory.EnumerateFiles( analyzerDirectory));
+                                }
+                            }
+
                         }
+                                _workspace.AddAnalyzer(projectId, Enumerable.Empty<string>());
 
                         foreach (var rawReference in val.RawReferences)
                         {

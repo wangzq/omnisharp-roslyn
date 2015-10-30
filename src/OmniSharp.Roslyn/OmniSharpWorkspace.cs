@@ -4,9 +4,11 @@ using System.Composition;
 using System.Composition.Convention;
 using System.Composition.Hosting;
 using System.Composition.Hosting.Core;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.Framework.Logging;
@@ -111,6 +113,19 @@ namespace OmniSharp
         public override bool CanApplyChange(ApplyChangesKind feature)
         {
             return true;
+        }
+
+        public void AddAnalyzer(ProjectId projectId, IEnumerable<string> files)
+        {
+#if DNX451
+            files = Directory.EnumerateFiles(@"C:\Users\David\.dnx\packages\StyleCop.Analyzers\1.0.0-beta015\analyzers\dotnet\cs");
+            Console.WriteLine("Loading analyzers " + string.Join(",", files));
+            foreach (var file in files)
+            {
+                this.SetCurrentSolution(CurrentSolution.AddAnalyzerReference(projectId,
+                    new AnalyzerFileReference(file)));
+            }
+#endif
         }
     }
 }
