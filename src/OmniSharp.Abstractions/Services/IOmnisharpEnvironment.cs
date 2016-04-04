@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 ﻿using Microsoft.Extensions.Logging;
 
 namespace OmniSharp.Services
@@ -11,5 +12,6 @@ namespace OmniSharp.Services
         string SolutionFilePath { get; }
         string ConfigurationPath { get; }
         TransportType TransportType { get; }
+        string[] Plugins { get; }
     }
 }

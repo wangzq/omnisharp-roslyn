@@ -69,7 +69,7 @@ namespace OmniSharp
                 }
             }
 
-            Environment = new OmnisharpEnvironment(applicationRoot, serverPort, hostPID, logLevel, transportType, otherArgs.ToArray());
+            Environment = new OmnisharpEnvironment(applicationRoot, serverPort, hostPID, logLevel, transportType, otherArgs.ToArray(), plugins.ToArray());
 
             var config = new ConfigurationBuilder()
                 .AddCommandLine(new[] { "--server.urls", "http://localhost:" + serverPort });

@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 
 namespace OmniSharp.Services
 {
     public class OmnisharpEnvironment : IOmnisharpEnvironment
     {
-        public OmnisharpEnvironment(string path, int port, int hostPid, LogLevel traceType, TransportType transportType, string[] otherArgs)
+        public OmnisharpEnvironment(string path, int port, int hostPid, LogLevel traceType, TransportType transportType, string[] otherArgs, string[] plugins)
         {
             if (System.IO.Path.GetExtension(path).Equals(".sln", StringComparison.OrdinalIgnoreCase))
             {
@@ -23,6 +24,7 @@ namespace OmniSharp.Services
             TransportType = transportType;
             ConfigurationPath = System.IO.Path.Combine(Path, "omnisharp.json");
             OtherArgs = otherArgs;
+            Plugins = plugins;
         }
 
         public LogLevel TraceType { get; }
@@ -34,11 +36,13 @@ namespace OmniSharp.Services
         public string Path { get; }
 
         public string SolutionFilePath { get; }
-        
+
         public string ConfigurationPath { get; }
 
         public TransportType TransportType { get; }
 
         public string[] OtherArgs { get; }
+
+        public string[] Plugins { get; }
     }
 }
