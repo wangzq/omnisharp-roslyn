@@ -1,8 +1,9 @@
 ﻿using System.Composition;
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.Extensions.Logging;
 using OmniSharp.Mef;
 using OmniSharp.Models;
 using OmniSharp.Options;
@@ -17,7 +18,8 @@ namespace OmniSharp.Roslyn.CSharp.Services.Types
         private readonly OmnisharpWorkspace _workspace;
 
         [ImportingConstructor]
-        public TypeLookupService(OmnisharpWorkspace workspace, FormattingOptions formattingOptions)
+        public TypeLookupService(OmnisharpWorkspace workspace,
+                                 FormattingOptions formattingOptions)
         {
             _workspace = workspace;
             _formattingOptions = formattingOptions;
@@ -35,7 +37,7 @@ namespace OmniSharp.Roslyn.CSharp.Services.Types
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(semanticModel, position, _workspace);
                 if (symbol != null)
                 {
-                    //non regular C# code semantics (interactive, script) don't allow namespaces
+                    // non regular C# code semantics (interactive, script) don't allow namespaces
                     if(document.SourceCodeKind == SourceCodeKind.Regular && symbol.Kind == SymbolKind.NamedType && !symbol.ContainingNamespace.IsGlobalNamespace)
                     {
                         response.Type = $"{symbol.ContainingNamespace.ToDisplayString()}.{symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}";
@@ -51,6 +53,7 @@ namespace OmniSharp.Roslyn.CSharp.Services.Types
                     }
                 }
             }
+            
             return response;
         }
     }

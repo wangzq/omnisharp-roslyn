@@ -1,3 +1,7 @@
 {
-    "projects": [ "src", "tests", "tools" ]
+    "projects": [
+        "src",
+        "tests",
+        "utility"
+    ]
 }

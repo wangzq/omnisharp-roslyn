@@ -1,26 +1,27 @@
-﻿using System.Collections.Generic;
-using Microsoft.CodeAnalysis;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.DotNet.ProjectModel;
+using NuGet.Frameworks;
 
 namespace OmniSharp.DotNet.Cache
 {
     public class ProjectState
     {
-        public ProjectState(ProjectId id, ProjectContext context)
+        public ProjectState(Guid id, ProjectContext context)
         {
             Id = id;
             ProjectContext = context;
         }
 
-        public ProjectId Id { get; }
+        public Guid Id { get; }
 
         public ProjectContext ProjectContext { get; set; }
 
-        public Dictionary<string, MetadataReference> FileMetadataReferences { get; } = new Dictionary<string, MetadataReference>();
+        public HashSet<string> FileMetadataReferences { get; } = new HashSet<string>();
+        
+        public HashSet<Tuple<string, NuGetFramework>> ProjectReferences { get; } = new HashSet<Tuple<string, NuGetFramework>>();
 
-        public Dictionary<string, ProjectId> ProjectReferences { get; } = new Dictionary<string, ProjectId>();
-
-        public Dictionary<string, DocumentId> DocumentReferences { get; } = new Dictionary<string, DocumentId>();
+        public Dictionary<string, Guid> DocumentReferences { get; } = new Dictionary<string, Guid>();
 
         public override string ToString()
         {

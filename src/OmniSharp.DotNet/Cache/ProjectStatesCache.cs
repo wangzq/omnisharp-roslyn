@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.CodeAnalysis;
 using Microsoft.DotNet.ProjectModel;
 using Microsoft.Extensions.Logging;
 using NuGet.Frameworks;
+using OmniSharp.Abstractions.ProjectSystem;
 using OmniSharp.DotNet.Models;
 using OmniSharp.Models;
 using OmniSharp.Services;
@@ -18,11 +18,13 @@ namespace OmniSharp.DotNet.Cache
 
         private readonly ILogger _logger;
         private readonly IEventEmitter _emitter;
+        private readonly ICompilationWorkspace _workspace;
 
-        public ProjectStatesCache(ILoggerFactory loggerFactory, IEventEmitter emitter)
+        public ProjectStatesCache(ILoggerFactory loggerFactory, IEventEmitter emitter, ICompilationWorkspace workspace)
         {
             _logger = loggerFactory?.CreateLogger<ProjectStatesCache>() ?? new DummyLogger<ProjectStatesCache>();
             _emitter = emitter;
+            _workspace = workspace;
         }
 
         public IEnumerable<ProjectEntry> GetStates => _projects.Values;
@@ -36,8 +38,8 @@ namespace OmniSharp.DotNet.Cache
 
         public void Update(string projectDirectory,
                            IEnumerable<ProjectContext> contexts,
-                           Action<ProjectId, ProjectContext> addAction,
-                           Action<ProjectId> removeAction)
+                           Action<Guid, ProjectContext> addAction,
+                           Action<Guid> removeAction)
         {
             _logger.LogDebug($"Updating project ${projectDirectory}");
 
@@ -65,7 +67,7 @@ namespace OmniSharp.DotNet.Cache
                 else
                 {
                     _logger.LogDebug($"  Add new {nameof(ProjectState)}.");
-                    var projectId = ProjectId.CreateNewId();
+                    var projectId = _workspace.CreateNewProjectID();
                     entry.Set(new ProjectState(projectId, context));
                     addAction(projectId, context);
                 }

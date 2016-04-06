@@ -30,10 +30,10 @@ namespace OmniSharp.Services
             var cacheKey = _cacheKeyPrefix + path.ToLowerInvariant();
 
             var metadata = _cache.Get<AssemblyMetadata>(cacheKey);
-            
+
             if (metadata == null)
             {
-                _logger.LogDebug(string.Format("Cache miss {0}", path));
+                _logger.LogTrace(string.Format("GetMetadataReference | Adding new cache: {0}", path));
 
                 using (var stream = File.OpenRead(path))
                 {
@@ -52,8 +52,10 @@ namespace OmniSharp.Services
             {
                 return metadata.GetReference(new XmlDocumentationProvider(documentationFile));
             }
-
-            return metadata.GetReference();
+            else
+            {
+                return metadata.GetReference();
+            }
         }
 
         private class FileWriteTimeTrigger : IChangeToken

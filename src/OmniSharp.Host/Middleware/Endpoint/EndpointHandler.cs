@@ -27,8 +27,11 @@ namespace OmniSharp.Middleware.Endpoint
     {
         public abstract Task<object> Handle(HttpContext context);
 
-        public static EndpointHandler Create<TRequest, TResponse>(IPredicateHandler languagePredicateHandler, CompositionHost host,
-            ILogger logger, EndpointDescriptor item,
+        public static EndpointHandler Create<TRequest, TResponse>(
+            IPredicateHandler languagePredicateHandler,
+            CompositionHost host,
+            ILogger logger,
+            EndpointDescriptor item,
             IEnumerable<Lazy<IRequestHandler, OmniSharpLanguage>> handlers,
             Lazy<EndpointHandler<UpdateBufferRequest, object>> updateBufferHandler,
             IEnumerable<Plugin> plugins)
@@ -36,8 +39,11 @@ namespace OmniSharp.Middleware.Endpoint
             return new EndpointHandler<TRequest, TResponse>(languagePredicateHandler, host, logger, item, handlers.Where(x => x.Metadata.EndpointName == item.EndpointName), updateBufferHandler, plugins);
         }
 
-        public static EndpointHandler Factory(IPredicateHandler languagePredicateHandler, CompositionHost host,
-            ILogger logger, EndpointDescriptor item,
+        public static EndpointHandler Factory(
+            IPredicateHandler languagePredicateHandler,
+            CompositionHost host,
+            ILogger logger,
+            EndpointDescriptor item,
             IEnumerable<Lazy<IRequestHandler, OmniSharpLanguage>> handlers,
             Lazy<EndpointHandler<UpdateBufferRequest, object>> updateBufferHandler,
             IEnumerable<Plugin> plugins)
@@ -60,7 +66,14 @@ namespace OmniSharp.Middleware.Endpoint
         private readonly IEnumerable<Plugin> _plugins;
         private readonly Lazy<EndpointHandler<UpdateBufferRequest, object>> _updateBufferHandler;
 
-        public EndpointHandler(IPredicateHandler languagePredicateHandler, CompositionHost host, ILogger logger, EndpointDescriptor item, IEnumerable<Lazy<IRequestHandler, OmniSharpLanguage>> handlers, Lazy<EndpointHandler<UpdateBufferRequest, object>> updateBufferHandler, IEnumerable<Plugin> plugins)
+        public EndpointHandler(IPredicateHandler languagePredicateHandler,
+                               CompositionHost host,
+                               ILogger logger,
+                               EndpointDescriptor item,
+                               IEnumerable<Lazy<IRequestHandler,
+                               OmniSharpLanguage>> handlers,
+                               Lazy<EndpointHandler<UpdateBufferRequest, object>> updateBufferHandler,
+                               IEnumerable<Plugin> plugins)
         {
             EndpointName = item.EndpointName;
             _host = host;

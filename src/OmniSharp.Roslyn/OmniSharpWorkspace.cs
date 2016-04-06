@@ -10,16 +10,16 @@ namespace OmniSharp
     [Export, Shared]
     public class OmnisharpWorkspace : Workspace
     {
-        public bool Initialized { get; set; }
-
-        public BufferManager BufferManager { get; private set; }
-
         [ImportingConstructor]
         public OmnisharpWorkspace(HostServicesBuilder builder) : base(builder.GetHostServices(), "Custom")
         {
             BufferManager = new BufferManager(this);
         }
+        
+        public bool Initialized { get; set; }
 
+        public BufferManager BufferManager { get; private set; }
+        
         public void AddProject(ProjectInfo projectInfo)
         {
             OnProjectAdded(projectInfo);

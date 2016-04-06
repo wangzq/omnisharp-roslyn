@@ -153,7 +153,7 @@ namespace OmniSharp
                 loggerFactory.AddConsole((category, level) => LogFilter(category, level, env));
             }
 
-            var logger = loggerFactory.CreateLogger<Startup>();
+            var logger = loggerFactory.CreateLogger("O# Host Startup");
 
             foreach (var assembly in assemblies)
             {
@@ -213,7 +213,8 @@ namespace OmniSharp
                 return true;
             }
 
-            if (!category.StartsWith("OmniSharp", StringComparison.OrdinalIgnoreCase))
+            if (!category.StartsWith("OmniSharp", StringComparison.OrdinalIgnoreCase) && 
+                !category.StartsWith("O#"))
             {
                 return false;
             }

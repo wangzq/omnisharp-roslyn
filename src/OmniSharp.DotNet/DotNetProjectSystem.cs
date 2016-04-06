@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Text;
 using Microsoft.DotNet.ProjectModel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -19,7 +14,7 @@ using OmniSharp.DotNet.Tools;
 using OmniSharp.Models;
 using OmniSharp.Models.v1;
 using OmniSharp.Services;
-using OmniSharp.DotNet.Projects;
+using OmniSharp.Abstractions.ProjectSystem;
 
 namespace OmniSharp.DotNet
 {
@@ -33,35 +28,36 @@ namespace OmniSharp.DotNet
         private readonly IMetadataFileReferenceCache _metadataFileReferenceCache;
         private readonly string _compilationConfiguration = "Debug";
         private readonly PackagesRestoreTool _packageRestore;
-        private readonly OmnisharpWorkspace _omnisharpWorkspace;
+        private readonly ICompilationWorkspace _workspace;
         private readonly ProjectStatesCache _projectStates;
         private WorkspaceContext _workspaceContext;
         private bool _enableRestorePackages = false;
 
         [ImportingConstructor]
         public DotNetProjectSystem(IOmnisharpEnvironment environment,
-                                   OmnisharpWorkspace omnisharpWorkspace,
+                                   ICompilationWorkspace workspace,
                                    IMetadataFileReferenceCache metadataFileReferenceCache,
                                    ILoggerFactory loggerFactory,
                                    IFileSystemWatcher watcher,
                                    IEventEmitter emitter)
         {
             _environment = environment;
-            _omnisharpWorkspace = omnisharpWorkspace;
-            _logger = loggerFactory.CreateLogger<DotNetProjectSystem>();
+            _workspace = workspace;
+            _logger = loggerFactory.CreateLogger("O# .NET Project System");
             _emitter = emitter;
             _metadataFileReferenceCache = metadataFileReferenceCache;
             _watcher = watcher;
 
             _packageRestore = new PackagesRestoreTool(loggerFactory, _emitter);
-            _projectStates = new ProjectStatesCache(loggerFactory, _emitter);
+            _projectStates = new ProjectStatesCache(loggerFactory, _emitter, _workspace);
         }
 
         public IEnumerable<string> Extensions { get; } = new string[] { ".cs" };
 
         public string Key => "DotNet";
 
-        public string Language => LanguageNames.CSharp;
+        // https://github.com/dotnet/roslyn/blob/9bac4a6f86515f2d6f9a09d07dc73bc7e81dd7e4/src/Compilers/Core/Portable/Symbols/LanguageNames.cs#L15
+        public string Language => "C#";
 
         public Task<object> GetInformationModel(WorkspaceInformationRequest request)
         {
@@ -75,13 +71,12 @@ namespace OmniSharp.DotNet
         public Task<object> GetProjectModel(string path)
         {
             _logger.LogDebug($"GetProjectModel {path}");
-            var document = _omnisharpWorkspace.GetDocument(path);
-            if (document == null)
+            var projectPath = _workspace.GetProjectPathFromDocumentPath(path);
+            if (projectPath == null)
             {
                 return Task.FromResult<object>(null);
             }
 
-            var projectPath = document.Project.FilePath;
             _logger.LogDebug($"GetProjectModel {path}=>{projectPath}");
             var projectEntry = _projectStates.GetOrAddEntry(projectPath);
             var projectInformation = new DotNetProjectInformation(projectEntry);
@@ -121,7 +116,7 @@ namespace OmniSharp.DotNet
             {
                 foreach (var state in entry.ProjectStates)
                 {
-                    _omnisharpWorkspace.RemoveProject(state.Id);
+                    _workspace.RemoveProject(state.Id);
                     _logger.LogInformation($"Removing project {state.Id}.");
                 }
             });
@@ -172,30 +167,27 @@ namespace OmniSharp.DotNet
             });
         }
 
-        private void AddProject(ProjectId id, ProjectContext context)
+        private void AddProject(Guid id, ProjectContext context)
         {
-            var info = ProjectInfo.Create(
+            _workspace.AddProject(
                 id: id,
-                version: VersionStamp.Create(),
                 name: $"{context.ProjectFile.Name}+{context.TargetFramework.GetShortFolderName()}",
                 assemblyName: context.ProjectFile.Name,
-                language: LanguageNames.CSharp,
+                language: Language,
                 filePath: context.ProjectFile.ProjectFilePath);
 
-            _omnisharpWorkspace.AddProject(info);
-
-            _logger.LogInformation($"Add project {context.ProjectFile.ProjectFilePath} => {id.Id}");
+            _logger.LogInformation($"Add project {context.ProjectFile.ProjectFilePath} => {id}");
         }
 
-        private void RemoveProject(ProjectId projectId)
+        private void RemoveProject(Guid projectId)
         {
-            _omnisharpWorkspace.RemoveProject(projectId);
+            _workspace.RemoveProject(projectId);
         }
 
         private void UpdateFileReferences(ProjectState state, IEnumerable<string> fileReferences)
         {
-            var metadataReferences = new List<MetadataReference>();
-            var fileReferencesToRemove = state.FileMetadataReferences.Keys.ToHashSet();
+            var metadataReferences = new List<string>();
+            var fileReferencesToRemove = state.FileMetadataReferences.ToHashSet();
 
             foreach (var fileReference in fileReferences)
             {
@@ -209,22 +201,20 @@ namespace OmniSharp.DotNet
                     continue;
                 }
 
-                var metadataReference = _metadataFileReferenceCache.GetMetadataReference(fileReference);
-                state.FileMetadataReferences[fileReference] = metadataReference;
-                metadataReferences.Add(metadataReference);
+                metadataReferences.Add(fileReference);
+                state.FileMetadataReferences.Add(fileReference);
                 _logger.LogDebug($"    Add file reference {fileReference}");
             }
 
             foreach (var reference in metadataReferences)
             {
-                _omnisharpWorkspace.AddMetadataReference(state.Id, reference);
+                _workspace.AddFileReference(state.Id, reference);
             }
 
             foreach (var reference in fileReferencesToRemove)
             {
-                var toRemove = state.FileMetadataReferences[reference];
                 state.FileMetadataReferences.Remove(reference);
-                _omnisharpWorkspace.RemoveMetadataReference(state.Id, toRemove);
+                _workspace.RemoveFileReference(state.Id, reference);
                 _logger.LogDebug($"    Remove file reference {reference}");
             }
 
@@ -236,34 +226,34 @@ namespace OmniSharp.DotNet
 
         private void UpdateProjectReferences(ProjectState state, IEnumerable<ProjectDescription> projectReferencesLatest)
         {
-            var projectReferences = new List<ProjectReference>();
-            var projectReferencesToRemove = state.ProjectReferences.Keys.ToHashSet();
+            var projectReferences = new List<Guid>();
+            var projectReferencesToRemove = state.ProjectReferences.ToHashSet();
 
             foreach (var description in projectReferencesLatest)
             {
-                var projectPath = Path.GetDirectoryName(description.Path);
-                if (projectReferencesToRemove.Remove(projectPath))
+                var key = Tuple.Create(Path.GetDirectoryName(description.Path), description.Framework);
+                if (projectReferencesToRemove.Remove(key))
                 {
                     continue;
                 }
 
-                var referencedProjectState = _projectStates.Find(projectPath, description.Framework);
-                projectReferences.Add(new ProjectReference(referencedProjectState.Id));
-                state.ProjectReferences[projectPath] = referencedProjectState.Id;
+                var referencedProjectState = _projectStates.Find(key.Item1, description.Framework);
+                projectReferences.Add(referencedProjectState.Id);
+                state.ProjectReferences.Add(key);
 
                 _logger.LogDebug($"    Add project reference {description.Path}");
             }
 
             foreach (var reference in projectReferences)
             {
-                _omnisharpWorkspace.AddProjectReference(state.Id, reference);
+                _workspace.AddProjectReference(state.Id, reference);
             }
 
             foreach (var reference in projectReferencesToRemove)
             {
-                var toRemove = state.ProjectReferences[reference];
+                var toRemove = _projectStates.Find(reference.Item1, reference.Item2);
                 state.ProjectReferences.Remove(reference);
-                _omnisharpWorkspace.RemoveProjectReference(state.Id, new ProjectReference(toRemove));
+                _workspace.RemoveProjectReference(state.Id, toRemove.Id);
 
                 _logger.LogDebug($"    Remove project reference {reference}");
             }
@@ -309,45 +299,27 @@ namespace OmniSharp.DotNet
         {
             var context = state.ProjectContext;
             var project = context.ProjectFile;
-            var option = project.GetCompilerOptions(context.TargetFramework, _compilationConfiguration);
-
-            var outputKind = option.EmitEntryPoint.GetValueOrDefault() ? OutputKind.ConsoleApplication :
-                                                                         OutputKind.DynamicallyLinkedLibrary;
-
-            var generalDiagnosticOpt = (option.WarningsAsErrors ?? false) ? ReportDiagnostic.Error :
-                                                                            ReportDiagnostic.Default;
-
-            var optimize = (option.Optimize ?? false) ? OptimizationLevel.Release : OptimizationLevel.Debug;
-
-            var csharpOptions = new CSharpCompilationOptions(outputKind)
-                .WithAllowUnsafe(option.AllowUnsafe ?? false)
-                .WithPlatform(ParsePlatfrom(option.Platform))
-                .WithGeneralDiagnosticOption(generalDiagnosticOpt)
-                .WithOptimizationLevel(optimize)
-                .WithSpecificDiagnosticOptions(new Dictionary<string, ReportDiagnostic> {
-                    { "CS1701", ReportDiagnostic.Suppress },
-                    { "CS1702", ReportDiagnostic.Suppress },
-                    { "CS1705", ReportDiagnostic.Suppress },
-                })
-                .WithConcurrentBuild(false); // TODO: actually just need to disable on mono
-
-            if (!string.IsNullOrEmpty(option.KeyFile))
+            var commonOption = project.GetCompilerOptions(context.TargetFramework, _compilationConfiguration);
+            var option = new GeneralCompilationOptions
             {
-                var cryptoKeyFile = Path.GetFullPath(Path.Combine(project.ProjectDirectory, option.KeyFile));
-                if (File.Exists(cryptoKeyFile))
-                {
-                    var strongNameProvider = new DesktopStrongNameProvider(ImmutableArray.Create(project.ProjectDirectory));
-                    csharpOptions = csharpOptions
-                        .WithStrongNameProvider(strongNameProvider)
-                        .WithCryptoPublicKey(SnkUtils.ExtractPublicKey(File.ReadAllBytes(cryptoKeyFile)));
-                }
-            }
+                EmitEntryPoint = commonOption.EmitEntryPoint.GetValueOrDefault(),
+                WarningsAsErrors = commonOption.WarningsAsErrors.GetValueOrDefault(),
+                Optimize = commonOption.Optimize.GetValueOrDefault(),
+                AllowUnsafe = commonOption.AllowUnsafe.GetValueOrDefault(),
+                ConcurrentBuild = false,
+                Platform = commonOption.Platform,
+                KeyFile = commonOption.KeyFile,
+                DiagnosticsOptions = new Dictionary<string, ReportDiagnosticOptions>{
+                    { "CS1701", ReportDiagnosticOptions.Suppress },
+                    { "CS1702", ReportDiagnosticOptions.Suppress },
+                    { "CS1705", ReportDiagnosticOptions.Suppress },
+                },
+                LanguageVersion = commonOption.LanguageVersion,
+                Defines = commonOption.Defines.ToArray()
+            };
 
-            var parseOptions = new CSharpParseOptions(languageVersion: ParseLanguageVersion(option.LanguageVersion),
-                                                      preprocessorSymbols: option.Defines);
-
-            _omnisharpWorkspace.SetCompilationOptions(state.Id, csharpOptions);
-            _omnisharpWorkspace.SetParseOptions(state.Id, parseOptions);
+            _workspace.SetCSharpCompilationOptions(state.Id, project.ProjectDirectory, option);
+            _workspace.SetParsingOptions(state.Id, option);
         }
 
         private void UpdateSourceFiles(ProjectState state, IEnumerable<string> sourceFiles)
@@ -366,29 +338,16 @@ namespace OmniSharp.DotNet
                     continue;
                 }
 
-                // TODO: performance optimize
-                using (var stream = File.OpenRead(file))
-                {
-                    // TODO: other encoding option?
-                    var sourceText = SourceText.From(stream, encoding: Encoding.UTF8);
-                    var docId = DocumentId.CreateNewId(state.Id);
-                    var version = VersionStamp.Create();
+                var docId = _workspace.AddDocument(state.Id, file);
+                state.DocumentReferences[file] = docId;
 
-                    var loader = TextLoader.From(TextAndVersion.Create(sourceText, version));
-
-
-                    var doc = DocumentInfo.Create(docId, file, filePath: file, loader: loader);
-                    _omnisharpWorkspace.AddDocument(doc);
-                    state.DocumentReferences[file] = doc.Id;
-
-                    _logger.LogDebug($"    Added document {file}.");
-                    added++;
-                }
+                _logger.LogDebug($"    Added document {file}.");
+                added++;
             }
 
             foreach (var file in existingFiles)
             {
-                _omnisharpWorkspace.RemoveDocument(state.DocumentReferences[file]);
+                _workspace.RemoveDocument(state.Id, state.DocumentReferences[file]);
                 state.DocumentReferences.Remove(file);
                 _logger.LogDebug($"    Removed document {file}.");
                 removed++;
@@ -398,28 +357,6 @@ namespace OmniSharp.DotNet
             {
                 _logger.LogInformation($"    Added {added} and removed {removed} documents.");
             }
-        }
-
-        private static Platform ParsePlatfrom(string value)
-        {
-            Platform platform;
-            if (!Enum.TryParse<Platform>(value, ignoreCase: true, result: out platform))
-            {
-                platform = Platform.AnyCpu;
-            }
-
-            return platform;
-        }
-
-        private static LanguageVersion ParseLanguageVersion(string value)
-        {
-            LanguageVersion languageVersion;
-            if (!Enum.TryParse<LanguageVersion>(value, ignoreCase: true, result: out languageVersion))
-            {
-                languageVersion = LanguageVersion.CSharp6;
-            }
-
-            return languageVersion;
         }
     }
 }
