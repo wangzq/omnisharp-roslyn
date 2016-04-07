@@ -51,7 +51,11 @@ namespace OmniSharp.MSBuild.ProjectFile
 
         public string AssemblyOriginatorKeyFile { get; private set; }
 
-        public static ProjectFileInfo Create(MSBuildOptions options, ILogger logger, string solutionDirectory, string projectFilePath, ICollection<MSBuildDiagnosticsMessage> diagnostics)
+        public static ProjectFileInfo Create(MSBuildOptions options,
+                                             ILogger logger,
+                                             string solutionDirectory,
+                                             string projectFilePath,
+                                             ICollection<MSBuildDiagnosticsMessage> diagnostics)
         {
             var projectFileInfo = new ProjectFileInfo();
             projectFileInfo.ProjectFilePath = projectFilePath;
@@ -94,14 +98,17 @@ namespace OmniSharp.MSBuild.ProjectFile
                 projectFileInfo.ProjectId = new Guid(projectInstance.GetPropertyValue("ProjectGuid").TrimStart('{').TrimEnd('}'));
                 projectFileInfo.TargetPath = projectInstance.GetPropertyValue("TargetPath");
                 var outputType = projectInstance.GetPropertyValue("OutputType");
-                switch(outputType)
+                switch (outputType)
                 {
-                    case "Library": projectFileInfo.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+                    case "Library":
+                        projectFileInfo.OutputKind = OutputKind.DynamicallyLinkedLibrary;
                         break;
-                    case "WinExe": projectFileInfo.OutputKind = OutputKind.WindowsApplication;
+                    case "WinExe":
+                        projectFileInfo.OutputKind = OutputKind.WindowsApplication;
                         break;
                     default:
-                    case "Exe": projectFileInfo.OutputKind = OutputKind.ConsoleApplication;
+                    case "Exe":
+                        projectFileInfo.OutputKind = OutputKind.ConsoleApplication;
                         break;
                 }
 
@@ -232,6 +239,7 @@ namespace OmniSharp.MSBuild.ProjectFile
 
                 projectFileInfo.AssemblyOriginatorKeyFile = properties["AssemblyOriginatorKeyFile"].FinalValue;
             }
+
             return projectFileInfo;
         }
 

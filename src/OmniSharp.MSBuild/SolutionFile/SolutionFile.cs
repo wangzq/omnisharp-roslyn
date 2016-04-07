@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -11,12 +10,6 @@ namespace Microsoft.CodeAnalysis.MSBuild
 {
     public class SolutionFile
     {
-        private readonly IEnumerable<string> headerLines;
-        private readonly string visualStudioVersionLineOpt;
-        private readonly string minimumVisualStudioVersionLineOpt;
-        private readonly IEnumerable<ProjectBlock> projectBlocks;
-        private readonly IEnumerable<SectionBlock> globalSectionBlocks;
-
         internal SolutionFile(
             IEnumerable<string> headerLines,
             string visualStudioVersionLineOpt,
@@ -26,53 +19,35 @@ namespace Microsoft.CodeAnalysis.MSBuild
         {
             if (headerLines == null)
             {
-                //throw new ArgumentNullException("headerLines");
-                throw new ArgumentException();
+                throw new ArgumentNullException(nameof(headerLines));
             }
 
             if (projectBlocks == null)
             {
-                //throw new ArgumentNullException("projectBlocks");
-                throw new ArgumentException();
+                throw new ArgumentNullException(nameof(projectBlocks));
             }
 
             if (globalSectionBlocks == null)
             {
-                //throw new ArgumentNullException("globalSectionBlocks");
-                throw new ArgumentException();
+                throw new ArgumentNullException(nameof(globalSectionBlocks));
             }
 
-            this.headerLines = headerLines.ToList();
-            this.visualStudioVersionLineOpt = visualStudioVersionLineOpt;
-            this.minimumVisualStudioVersionLineOpt = minimumVisualStudioVersionLineOpt;
-            this.projectBlocks = projectBlocks.ToList();
-            this.globalSectionBlocks = globalSectionBlocks.ToList();
+            HeaderLines = headerLines.ToList();
+            VisualStudioVersionLineOpt = visualStudioVersionLineOpt;
+            MinimumVisualStudioVersionLineOpt = minimumVisualStudioVersionLineOpt;
+            ProjectBlocks = projectBlocks.ToList();
+            GlobalSectionBlocks = globalSectionBlocks.ToList();
         }
 
-        public IEnumerable<string> HeaderLines
-        {
-            get { return headerLines; }
-        }
+        public IEnumerable<string> HeaderLines { get; }
 
-        public string VisualStudioVersionLineOpt
-        {
-            get { return visualStudioVersionLineOpt; }
-        }
+        public string VisualStudioVersionLineOpt { get; }
 
-        public string MinimumVisualStudioVersionLineOpt
-        {
-            get { return minimumVisualStudioVersionLineOpt; }
-        }
+        public string MinimumVisualStudioVersionLineOpt { get; }
 
-        public IEnumerable<ProjectBlock> ProjectBlocks
-        {
-            get { return projectBlocks; }
-        }
+        public IEnumerable<ProjectBlock> ProjectBlocks { get; }
 
-        public IEnumerable<SectionBlock> GlobalSectionBlocks
-        {
-            get { return globalSectionBlocks; }
-        }
+        public IEnumerable<SectionBlock> GlobalSectionBlocks { get; }
 
         public string GetText()
         {
@@ -80,19 +55,19 @@ namespace Microsoft.CodeAnalysis.MSBuild
 
             builder.AppendLine();
 
-            foreach (var headerLine in headerLines)
+            foreach (var headerLine in HeaderLines)
             {
                 builder.AppendLine(headerLine);
             }
 
-            foreach (var block in projectBlocks)
+            foreach (var block in ProjectBlocks)
             {
                 builder.Append(block.GetText());
             }
 
             builder.AppendLine("Global");
 
-            foreach (var block in globalSectionBlocks)
+            foreach (var block in GlobalSectionBlocks)
             {
                 builder.Append(block.GetText(indent: 1));
             }

@@ -23,6 +23,7 @@ namespace OmniSharp.Models
         }
 
         public string SolutionPath { get; }
+        
         public IEnumerable<MSBuildProject> Projects { get; }
     }
 }

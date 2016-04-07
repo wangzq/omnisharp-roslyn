@@ -18,56 +18,39 @@ namespace Microsoft.CodeAnalysis.MSBuild
     /// </summary>
     public class SectionBlock
     {
-        private readonly string type;
-        private readonly string parenthesizedName;
-        private readonly string value;
-        private readonly IEnumerable<KeyValuePair<string, string>> keyValuePairs;
-
-        public SectionBlock(string type, string parenthesizedName, string value, IEnumerable<KeyValuePair<string, string>> keyValuePairs)
+        public SectionBlock(string type,
+                            string parenthesizedName,
+                            string value,
+                            IEnumerable<KeyValuePair<string, string>> keyValuePairs)
         {
             if (string.IsNullOrEmpty(type))
             {
-                //throw new ArgumentException(string.Format(WorkspacesResources.StringIsNullOrEmpty, "type"));
-                throw new ArgumentException();
+                throw new ArgumentException(nameof(type));
             }
 
             if (string.IsNullOrEmpty(parenthesizedName))
             {
-                //throw new ArgumentException(string.Format(WorkspacesResources.StringIsNullOrEmpty, "parenthesizedName"));
-                throw new ArgumentException();
+                throw new ArgumentException(nameof(parenthesizedName));
             }
 
             if (string.IsNullOrEmpty(value))
             {
-                //throw new ArgumentException(string.Format(WorkspacesResources.StringIsNullOrEmpty, "value"));
-                throw new ArgumentException();
+                throw new ArgumentException(nameof(value));
             }
 
-            this.type = type;
-            this.parenthesizedName = parenthesizedName;
-            this.value = value;
-            this.keyValuePairs = keyValuePairs.ToList();
+            Type = type;
+            ParenthesizedName = parenthesizedName;
+            Value = value;
+            KeyValuePairs = keyValuePairs.ToList();
         }
 
-        public string Type
-        {
-            get { return type; }
-        }
+        public string Type { get; }
 
-        public string ParenthesizedName
-        {
-            get { return parenthesizedName; }
-        }
+        public string ParenthesizedName { get; }
 
-        public string Value
-        {
-            get { return value; }
-        }
+        public string Value { get; }
 
-        public IEnumerable<KeyValuePair<string, string>> KeyValuePairs
-        {
-            get { return keyValuePairs; }
-        }
+        public IEnumerable<KeyValuePair<string, string>> KeyValuePairs { get; }
 
         internal string GetText(int indent)
         {

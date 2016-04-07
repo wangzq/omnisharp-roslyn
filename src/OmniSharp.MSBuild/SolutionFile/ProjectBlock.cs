@@ -10,11 +10,11 @@ namespace Microsoft.CodeAnalysis.MSBuild
 {
     public class ProjectBlock
     {
-        private Guid projectTypeGuid;
-        private readonly string projectName;
-        private readonly string projectPath;
-        private Guid projectGuid;
-        private readonly IEnumerable<SectionBlock> projectSections;
+        private Guid _projectTypeGuid;
+        private Guid _projectGuid;
+        private readonly string _projectName;
+        private readonly string _projectPath;
+        private readonly IEnumerable<SectionBlock> _projectSections;
 
         public ProjectBlock(Guid projectTypeGuid, string projectName, string projectPath, Guid projectGuid, IEnumerable<SectionBlock> projectSections)
         {
@@ -30,37 +30,22 @@ namespace Microsoft.CodeAnalysis.MSBuild
                 throw new ArgumentException();
             }
 
-            this.projectTypeGuid = projectTypeGuid;
-            this.projectName = projectName;
-            this.projectPath = projectPath;
-            this.projectGuid = projectGuid;
-            this.projectSections = projectSections.ToList();
+            _projectTypeGuid = projectTypeGuid;
+            _projectName = projectName;
+            _projectPath = projectPath;
+            _projectGuid = projectGuid;
+            _projectSections = projectSections.ToList();
         }
 
-        public Guid ProjectTypeGuid
-        {
-            get { return projectTypeGuid; }
-        }
+        public Guid ProjectTypeGuid => _projectTypeGuid;
 
-        public string ProjectName
-        {
-            get { return projectName; }
-        }
+        public string ProjectName => _projectName;
 
-        public string ProjectPath
-        {
-            get { return projectPath; }
-        }
+        public string ProjectPath => _projectPath;
 
-        public Guid ProjectGuid
-        {
-            get { return projectGuid; }
-        }
+        public Guid ProjectGuid => _projectGuid;
 
-        public IEnumerable<SectionBlock> ProjectSections
-        {
-            get { return projectSections; }
-        }
+        public IEnumerable<SectionBlock> ProjectSections => _projectSections;
 
         internal string GetText()
         {
@@ -69,7 +54,7 @@ namespace Microsoft.CodeAnalysis.MSBuild
             builder.AppendFormat("Project(\"{0}\") = \"{1}\", \"{2}\", \"{3}\"", ProjectTypeGuid.ToString("B").ToUpper(), ProjectName, ProjectPath, ProjectGuid.ToString("B").ToUpper());
             builder.AppendLine();
 
-            foreach (var block in projectSections)
+            foreach (var block in _projectSections)
             {
                 builder.Append(block.GetText(indent: 1));
             }
