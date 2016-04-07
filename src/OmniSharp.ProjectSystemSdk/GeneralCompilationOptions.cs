@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace OmniSharp.Abstractions.ProjectSystem
+namespace OmniSharp.ProjectSystemSdk
 {
     public class GeneralCompilationOptions
     {
-        public bool EmitEntryPoint { get; set; }
+        public GeneralOutputKind OutputKind { get; set; }
         public bool WarningsAsErrors { get; set; }
         public bool Optimize { get; set; }
         public bool AllowUnsafe { get; set; }
@@ -15,5 +15,6 @@ namespace OmniSharp.Abstractions.ProjectSystem
         public Dictionary<string, ReportDiagnosticOptions> DiagnosticsOptions { get; set; } = new Dictionary<string, ReportDiagnosticOptions>();
         public string LanguageVersion { get; set; }
         public IEnumerable<string> Defines { get; set; } = Enumerable.Empty<string>();
+        public bool UseDefaultDesktopAssemblyIdentityComparer { get; set; }
     }
 }

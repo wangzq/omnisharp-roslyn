@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 
-namespace OmniSharp.MSBuild.Analyzers
+namespace OmniSharp.Roslyn.Analyzer
 {
     public class SimpleAnalyzerAssemblyLoader : IAnalyzerAssemblyLoader
     {
@@ -13,7 +13,11 @@ namespace OmniSharp.MSBuild.Analyzers
 
         public Assembly LoadFromPath(string fullPath)
         {
+#if NET451
             return Assembly.LoadFrom(fullPath);
+#else
+            throw new NotImplementedException();
+#endif
         }
     }
 }

@@ -10,6 +10,7 @@
     "OmniSharp.Stdio": "1.0.0-*",
     "OmniSharp.Plugins": "1.0.0-*",
     "OmniSharp.Roslyn": "1.0.0-*",
+    "OmniSharp.ProjectSystemSdk": "1.0.0-*",
     "Microsoft.AspNetCore.Diagnostics": "1.0.0-rc2-20607",
     "Microsoft.AspNetCore.Server.Kestrel": "1.0.0-rc2-20607",
     "Microsoft.Composition": "1.0.30",

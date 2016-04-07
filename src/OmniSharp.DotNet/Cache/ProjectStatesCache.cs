@@ -4,9 +4,9 @@ using System.Linq;
 using Microsoft.DotNet.ProjectModel;
 using Microsoft.Extensions.Logging;
 using NuGet.Frameworks;
-using OmniSharp.Abstractions.ProjectSystem;
 using OmniSharp.DotNet.Models;
 using OmniSharp.Models;
+using OmniSharp.ProjectSystemSdk;
 using OmniSharp.Services;
 
 namespace OmniSharp.DotNet.Cache

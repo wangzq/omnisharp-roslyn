@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.CodeAnalysis.MSBuild
+namespace OmniSharp.MSBuild.Solution
 {
     public class ProjectBlock
     {

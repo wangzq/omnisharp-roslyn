@@ -2,7 +2,8 @@
   "version": "1.0.0-*",
   "dependencies": {
     "OmniSharp.Abstractions": "1.0.0-*",
-    "Microsoft.DotNet.ProjectModel": "1.0.0-rc2-002416",
+    "OmniSharp.ProjectSystemSdk": "1.0.0-*",
+    "Microsoft.DotNet.ProjectModel": "1.0.0-beta-002416",
     "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc2-20607"
   },
   "frameworks": {

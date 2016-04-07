@@ -6,16 +6,16 @@ using System.Runtime.Versioning;
 using Microsoft.Build.BuildEngine;
 using Microsoft.Build.Evaluation;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Models;
 using OmniSharp.Options;
+using OmniSharp.ProjectSystemSdk;
 
 namespace OmniSharp.MSBuild.ProjectFile
 {
     public class ProjectFileInfo
     {
-        public ProjectId WorkspaceId { get; set; }
+        public Guid WorkspaceId { get; set; }
 
         public Guid ProjectId { get; private set; }
 
@@ -25,7 +25,7 @@ namespace OmniSharp.MSBuild.ProjectFile
 
         public FrameworkName TargetFramework { get; private set; }
 
-        public LanguageVersion? SpecifiedLanguageVersion { get; private set; }
+        public string LanguageVersion { get; private set; }
 
         public string ProjectDirectory => Path.GetDirectoryName(ProjectFilePath);
 
@@ -36,6 +36,8 @@ namespace OmniSharp.MSBuild.ProjectFile
         public IList<string> SourceFiles { get; private set; }
 
         public IList<string> References { get; private set; }
+        
+        public HashSet<string> LoadedReferences { get; private set; } = new HashSet<string>();
 
         public IList<string> ProjectReferences { get; private set; }
 
@@ -45,7 +47,7 @@ namespace OmniSharp.MSBuild.ProjectFile
 
         public bool AllowUnsafe { get; private set; }
 
-        public OutputKind OutputKind { get; private set; }
+        public GeneralOutputKind OutputKind { get; private set; }
 
         public bool SignAssembly { get; private set; }
 
@@ -94,21 +96,21 @@ namespace OmniSharp.MSBuild.ProjectFile
                 projectFileInfo.AssemblyName = projectInstance.GetPropertyValue("AssemblyName");
                 projectFileInfo.Name = projectInstance.GetPropertyValue("ProjectName");
                 projectFileInfo.TargetFramework = new FrameworkName(projectInstance.GetPropertyValue("TargetFrameworkMoniker"));
-                projectFileInfo.SpecifiedLanguageVersion = ToLanguageVersion(projectInstance.GetPropertyValue("LangVersion"));
+                projectFileInfo.LanguageVersion = ToLanguageVersion(projectInstance.GetPropertyValue("LangVersion"));
                 projectFileInfo.ProjectId = new Guid(projectInstance.GetPropertyValue("ProjectGuid").TrimStart('{').TrimEnd('}'));
                 projectFileInfo.TargetPath = projectInstance.GetPropertyValue("TargetPath");
                 var outputType = projectInstance.GetPropertyValue("OutputType");
                 switch (outputType)
                 {
                     case "Library":
-                        projectFileInfo.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+                        projectFileInfo.OutputKind = GeneralOutputKind.DynamicallyLinkedLibrary;
                         break;
                     case "WinExe":
-                        projectFileInfo.OutputKind = OutputKind.WindowsApplication;
+                        projectFileInfo.OutputKind = GeneralOutputKind.WindowsApplication;
                         break;
                     default:
                     case "Exe":
-                        projectFileInfo.OutputKind = OutputKind.ConsoleApplication;
+                        projectFileInfo.OutputKind = GeneralOutputKind.ConsoleApplication;
                         break;
                 }
 
@@ -195,7 +197,7 @@ namespace OmniSharp.MSBuild.ProjectFile
                 projectFileInfo.TargetFramework = new FrameworkName(properties["TargetFrameworkMoniker"].FinalValue);
                 if (properties.ContainsKey("LangVersion"))
                 {
-                    projectFileInfo.SpecifiedLanguageVersion = ToLanguageVersion(properties["LangVersion"].FinalValue);
+                    projectFileInfo.LanguageVersion = ToLanguageVersion(properties["LangVersion"].FinalValue);
                 }
                 projectFileInfo.ProjectId = new Guid(properties["ProjectGuid"].FinalValue.TrimStart('{').TrimEnd('}'));
                 projectFileInfo.TargetPath = properties["TargetPath"].FinalValue;
@@ -243,22 +245,24 @@ namespace OmniSharp.MSBuild.ProjectFile
             return projectFileInfo;
         }
 
-        private static LanguageVersion? ToLanguageVersion(string langVersionPropertyValue)
+        private static string ToLanguageVersion(string langVersionPropertyValue)
         {
-            if (!(string.IsNullOrWhiteSpace(langVersionPropertyValue) || langVersionPropertyValue.Equals("Default", StringComparison.OrdinalIgnoreCase)))
+            if (!(string.IsNullOrWhiteSpace(langVersionPropertyValue) || 
+                langVersionPropertyValue.Equals("Default", StringComparison.OrdinalIgnoreCase)))
             {
                 // ISO-1, ISO-2, 3, 4, 5, 6 or Default
                 switch (langVersionPropertyValue.ToLower())
                 {
-                    case "iso-1": return LanguageVersion.CSharp1;
-                    case "iso-2": return LanguageVersion.CSharp2;
-                    case "3": return LanguageVersion.CSharp3;
-                    case "4": return LanguageVersion.CSharp4;
-                    case "5": return LanguageVersion.CSharp5;
-                    case "6": return LanguageVersion.CSharp6;
+                    case "iso-1": return "CSharp1";
+                    case "iso-2": return "CSharp2";
+                    case "3": return "CSharp3";
+                    case "4": return "CSharp4";
+                    case "5": return "CSharp5";
+                    case "6": return "CSharp6";
                 }
             }
-            return null;
+            
+            return "CSharp6";
         }
     }
 

@@ -1,4 +1,4 @@
-namespace Microsoft.CodeAnalysis.MSBuild
+namespace OmniSharp.MSBuild.Solution
 {
     internal class LineScanner
     {

@@ -10,11 +10,12 @@ using Microsoft.Extensions.Logging;
 using OmniSharp.DotNet.Cache;
 using OmniSharp.DotNet.Extensions;
 using OmniSharp.DotNet.Models;
+using OmniSharp.DotNet.Projects;
 using OmniSharp.DotNet.Tools;
 using OmniSharp.Models;
 using OmniSharp.Models.v1;
+using OmniSharp.ProjectSystemSdk;
 using OmniSharp.Services;
-using OmniSharp.Abstractions.ProjectSystem;
 
 namespace OmniSharp.DotNet
 {
@@ -56,8 +57,7 @@ namespace OmniSharp.DotNet
 
         public string Key => "DotNet";
 
-        // https://github.com/dotnet/roslyn/blob/9bac4a6f86515f2d6f9a09d07dc73bc7e81dd7e4/src/Compilers/Core/Portable/Symbols/LanguageNames.cs#L15
-        public string Language => "C#";
+        public string Language => GeneralLanguageNames.CSharp;
 
         public Task<object> GetInformationModel(WorkspaceInformationRequest request)
         {
@@ -302,7 +302,8 @@ namespace OmniSharp.DotNet
             var commonOption = project.GetCompilerOptions(context.TargetFramework, _compilationConfiguration);
             var option = new GeneralCompilationOptions
             {
-                EmitEntryPoint = commonOption.EmitEntryPoint.GetValueOrDefault(),
+                OutputKind = commonOption.EmitEntryPoint.GetValueOrDefault() ? GeneralOutputKind.ConsoleApplication :
+                                                                               GeneralOutputKind.DynamicallyLinkedLibrary,
                 WarningsAsErrors = commonOption.WarningsAsErrors.GetValueOrDefault(),
                 Optimize = commonOption.Optimize.GetValueOrDefault(),
                 AllowUnsafe = commonOption.AllowUnsafe.GetValueOrDefault(),

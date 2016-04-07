@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
-using Microsoft.CodeAnalysis.MSBuild;
+using OmniSharp.MSBuild.Solution;
 using OmniSharp.MSBuild;
 using Xunit;
 

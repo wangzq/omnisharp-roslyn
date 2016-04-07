@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Composition;
-using Microsoft.CodeAnalysis;
 using OmniSharp.MSBuild.ProjectFile;
 
 namespace OmniSharp.MSBuild
@@ -9,7 +8,7 @@ namespace OmniSharp.MSBuild
     [Export, Shared]
     public class MSBuildContext
     {
-        public Dictionary<Guid, ProjectId> ProjectGuidToWorkspaceMapping { get; } = new Dictionary<Guid, ProjectId>();
+        public Dictionary<Guid, Guid> ProjectGuidToWorkspaceMapping { get; } = new Dictionary<Guid, Guid>();
         public Dictionary<string, ProjectFileInfo> Projects { get; } = new Dictionary<string, ProjectFileInfo>(StringComparer.OrdinalIgnoreCase);
         public string SolutionPath { get; set; }
     }

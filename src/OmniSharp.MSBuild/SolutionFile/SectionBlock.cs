@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.CodeAnalysis.MSBuild
+namespace OmniSharp.MSBuild.Solution
 {
     /// <summary>
     /// Represents a SectionBlock in a .sln file. Section blocks are of the form:

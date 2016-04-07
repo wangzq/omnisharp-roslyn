@@ -130,8 +130,10 @@ namespace OmniSharp
                               IOmnisharpAssemblyLoader loader,
                               IOptions<OmniSharpOptions> optionsAccessor)
         {
-            Func<RuntimeLibrary, bool> shouldLoad = lib => lib.Dependencies.Any(dep => dep.Name == "OmniSharp.Abstractions" ||
-                                                                                       dep.Name == "OmniSharp.Roslyn");
+            Func<RuntimeLibrary, bool> shouldLoad = lib => lib.Dependencies.Any(
+                dep => dep.Name == "OmniSharp.Abstractions" ||
+                       dep.Name == "OmniSharp.Roslyn" ||
+                       dep.Name == "OmniSharp.ProjectSystemSdk");
 
             var dependencyContext = DependencyContext.Default;
             var assemblies = dependencyContext.RuntimeLibraries
