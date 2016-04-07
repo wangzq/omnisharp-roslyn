@@ -41,7 +41,7 @@ namespace OmniSharp.DotNet.Cache
                            Action<Guid, ProjectContext> addAction,
                            Action<Guid> removeAction)
         {
-            _logger.LogDebug($"Updating project ${projectDirectory}");
+            _logger.LogTrace($"Updating project ${projectDirectory}");
 
             bool added;
             var entry = GetOrAddEntry(projectDirectory, out added);
@@ -57,16 +57,16 @@ namespace OmniSharp.DotNet.Cache
 
             foreach (var context in contexts)
             {
-                _logger.LogDebug($"  For context {context.TargetFramework}");
+                _logger.LogTrace($"  For context {context.TargetFramework}");
                 ProjectState currentState = entry.Get(context.TargetFramework);
                 if (currentState != null)
                 {
-                    _logger.LogDebug($"  Update exsiting {nameof(ProjectState)}.");
+                    _logger.LogTrace($"  Update exsiting {nameof(ProjectState)}.");
                     currentState.ProjectContext = context;
                 }
                 else
                 {
-                    _logger.LogDebug($"  Add new {nameof(ProjectState)}.");
+                    _logger.LogTrace($"  Add new {nameof(ProjectState)}.");
                     var projectId = _workspace.CreateNewProjectID();
                     entry.Set(new ProjectState(projectId, context));
                     addAction(projectId, context);

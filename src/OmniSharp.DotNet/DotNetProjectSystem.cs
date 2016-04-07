@@ -70,14 +70,14 @@ namespace OmniSharp.DotNet
 
         public Task<object> GetProjectModel(string path)
         {
-            _logger.LogDebug($"GetProjectModel {path}");
+            _logger.LogTrace($"GetProjectModel {path}");
             var projectPath = _workspace.GetProjectPathFromDocumentPath(path);
             if (projectPath == null)
             {
                 return Task.FromResult<object>(null);
             }
 
-            _logger.LogDebug($"GetProjectModel {path}=>{projectPath}");
+            _logger.LogTrace($"GetProjectModel {path}=>{projectPath}");
             var projectEntry = _projectStates.GetOrAddEntry(projectPath);
             var projectInformation = new DotNetProjectInformation(projectEntry);
             return Task.FromResult<object>(projectInformation);
@@ -107,7 +107,7 @@ namespace OmniSharp.DotNet
 
         public void Update(bool allowRestore)
         {
-            _logger.LogInformation("Update workspace context");
+            _logger.LogTrace("Update workspace context");
             _workspaceContext.Refresh();
 
             var projectPaths = _workspaceContext.GetAllProjects();
@@ -117,7 +117,7 @@ namespace OmniSharp.DotNet
                 foreach (var state in entry.ProjectStates)
                 {
                     _workspace.RemoveProject(state.Id);
-                    _logger.LogInformation($"Removing project {state.Id}.");
+                    _logger.LogTrace($"Removing project {state.Id}.");
                 }
             });
 
@@ -126,10 +126,10 @@ namespace OmniSharp.DotNet
                 UpdateProject(projectPath);
             }
 
-            _logger.LogInformation("Resolving projects references");
+            _logger.LogTrace("Resolving projects references");
             foreach (var state in _projectStates.GetValues())
             {
-                _logger.LogInformation($"  Processing {state}");
+                _logger.LogTrace($"  Processing {state}");
 
                 var lens = new ProjectContextLens(state.ProjectContext, _compilationConfiguration);
                 UpdateFileReferences(state, lens.FileReferences);
@@ -142,7 +142,7 @@ namespace OmniSharp.DotNet
 
         private void UpdateProject(string projectDirectory)
         {
-            _logger.LogInformation($"Update project {projectDirectory}");
+            _logger.LogTrace($"Update project {projectDirectory}");
             var contexts = _workspaceContext.GetProjectContexts(projectDirectory);
 
             if (!contexts.Any())
@@ -156,13 +156,13 @@ namespace OmniSharp.DotNet
             var projectFilePath = contexts.First().ProjectFile.ProjectFilePath;
             _watcher.Watch(projectFilePath, file =>
             {
-                _logger.LogInformation($"Watcher: {file} updated.");
+                _logger.LogTrace($"Watcher: {file} updated.");
                 Update(true);
             });
 
             _watcher.Watch(Path.ChangeExtension(projectFilePath, "lock.json"), file =>
             {
-                _logger.LogInformation($"Watcher: {file} updated.");
+                _logger.LogTrace($"Watcher: {file} updated.");
                 Update(false);
             });
         }
@@ -176,7 +176,7 @@ namespace OmniSharp.DotNet
                 language: Language,
                 filePath: context.ProjectFile.ProjectFilePath);
 
-            _logger.LogInformation($"Add project {context.ProjectFile.ProjectFilePath} => {id}");
+            _logger.LogTrace($"Add project {context.ProjectFile.ProjectFilePath} => {id}");
         }
 
         private void RemoveProject(Guid projectId)
@@ -203,7 +203,7 @@ namespace OmniSharp.DotNet
 
                 metadataReferences.Add(fileReference);
                 state.FileMetadataReferences.Add(fileReference);
-                _logger.LogDebug($"    Add file reference {fileReference}");
+                _logger.LogTrace($"Add file reference {fileReference} | project: {state.Id}");
             }
 
             foreach (var reference in metadataReferences)
@@ -215,12 +215,12 @@ namespace OmniSharp.DotNet
             {
                 state.FileMetadataReferences.Remove(reference);
                 _workspace.RemoveFileReference(state.Id, reference);
-                _logger.LogDebug($"    Remove file reference {reference}");
+                _logger.LogTrace($"Remove file reference {reference} | project: {state.Id}");
             }
 
             if (metadataReferences.Count != 0 || fileReferencesToRemove.Count != 0)
             {
-                _logger.LogInformation($"    Added {metadataReferences.Count} and removed {fileReferencesToRemove.Count} file references");
+                _logger.LogInformation($"Project {state.Id}: Added {metadataReferences.Count} and removed {fileReferencesToRemove.Count} file references.");
             }
         }
 
@@ -241,7 +241,7 @@ namespace OmniSharp.DotNet
                 projectReferences.Add(referencedProjectState.Id);
                 state.ProjectReferences.Add(key);
 
-                _logger.LogDebug($"    Add project reference {description.Path}");
+                _logger.LogTrace($"Add project reference {description.Path}");
             }
 
             foreach (var reference in projectReferences)
@@ -255,12 +255,12 @@ namespace OmniSharp.DotNet
                 state.ProjectReferences.Remove(reference);
                 _workspace.RemoveProjectReference(state.Id, toRemove.Id);
 
-                _logger.LogDebug($"    Remove project reference {reference}");
+                _logger.LogTrace($"Remove project reference {reference}");
             }
 
             if (projectReferences.Count != 0 || projectReferencesToRemove.Count != 0)
             {
-                _logger.LogInformation($"    Added {projectReferences.Count} and removed {projectReferencesToRemove.Count} project references");
+                _logger.LogInformation($"Project {state.Id}: Added {projectReferences.Count} and removed {projectReferencesToRemove.Count} project references");
             }
         }
 
@@ -341,7 +341,7 @@ namespace OmniSharp.DotNet
                 var docId = _workspace.AddDocument(state.Id, file);
                 state.DocumentReferences[file] = docId;
 
-                _logger.LogDebug($"    Added document {file}.");
+                _logger.LogTrace($"    Added document {file}.");
                 added++;
             }
 
@@ -349,13 +349,13 @@ namespace OmniSharp.DotNet
             {
                 _workspace.RemoveDocument(state.Id, state.DocumentReferences[file]);
                 state.DocumentReferences.Remove(file);
-                _logger.LogDebug($"    Removed document {file}.");
+                _logger.LogTrace($"    Removed document {file}.");
                 removed++;
             }
 
             if (added != 0 || removed != 0)
             {
-                _logger.LogInformation($"    Added {added} and removed {removed} documents.");
+                _logger.LogInformation($"Project {state.Id}: Added {added} and removed {removed} documents.");
             }
         }
     }
