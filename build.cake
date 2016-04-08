@@ -11,7 +11,8 @@ var configuration = Argument("configuration", "Release");
 // Optional arguments
 var testConfiguration = Argument("test-configuration", "Debug");
 var installFolder = Argument("install-path", IsRunningOnWindows() ?
-                        $"{EnvironmentVariable("USERPROFILE")}/.omnisharp/local" : "~/.omnisharp/local");
+                        $"{EnvironmentVariable("USERPROFILE")}/.omnisharp/local" : 
+                        $"{EnvironmentVariable("HOME")}/.omnisharp/local");
 var requireArchive = HasArgument("archive");
 
 // Working directory
@@ -531,7 +532,7 @@ Task("Install")
     foreach (var framework in buildPlan.Frameworks)
     {
         var outputFolder = $"{publishFolder}/{project}/default/{framework}";
-        CopyDirectory(outputFolder, installFolder);
+        CopyDirectory(outputFolder, $"{installFolder}/{framework}");
     }
 });
 
