@@ -12,10 +12,10 @@ namespace OmniSharp
 {
     class ReflectionNamespaces
     {
-        internal const string WorkspacesAsmName = ", Microsoft.CodeAnalysis.Workspaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
-        internal const string CSWorkspacesAsmName = ", Microsoft.CodeAnalysis.CSharp.Workspaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
-        internal const string CAAsmName = ", Microsoft.CodeAnalysis, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
-        internal const string CACSharpAsmName = ", Microsoft.CodeAnalysis.CSharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
+        internal const string WorkspacesAsmName = ", Microsoft.CodeAnalysis.Workspaces";
+        internal const string CSWorkspacesAsmName = ", Microsoft.CodeAnalysis.CSharp.Workspaces";
+        internal const string CAAsmName = ", Microsoft.CodeAnalysis";
+        internal const string CACSharpAsmName = ", Microsoft.CodeAnalysis.CSharp";
     }
 
 
