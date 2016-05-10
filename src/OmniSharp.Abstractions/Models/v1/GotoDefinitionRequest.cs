@@ -7,5 +7,6 @@ namespace OmniSharp.Models
     {
         public int Timeout { get; set; } = 2000;
         public bool WantMetadata { get; set; }
+		public bool Disassemble { get; set; }
     }
 }

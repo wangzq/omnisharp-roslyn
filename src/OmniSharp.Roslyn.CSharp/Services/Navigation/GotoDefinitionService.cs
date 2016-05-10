@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Composition;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Text;
 using OmniSharp.Mef;
 using OmniSharp.Models;
+using OmniSharp.Services;
 
 namespace OmniSharp.Roslyn.CSharp.Services.Navigation
 {
@@ -17,12 +19,14 @@ namespace OmniSharp.Roslyn.CSharp.Services.Navigation
     {
         private readonly MetadataHelper _metadataHelper;
         private readonly OmnisharpWorkspace _workspace;
+		private readonly IMetadataFileReferenceCache _metadataCache;
 
         [ImportingConstructor]
-        public GotoDefinitionService(OmnisharpWorkspace workspace, MetadataHelper metadataHelper)
+        public GotoDefinitionService(OmnisharpWorkspace workspace, MetadataHelper metadataHelper, IMetadataFileReferenceCache metadataCache)
         {
             _workspace = workspace;
             _metadataHelper = metadataHelper;
+			_metadataCache = metadataCache;
         }
 
         public async Task<GotoDefinitionResponse> Handle(GotoDefinitionRequest request)
@@ -76,6 +80,20 @@ namespace OmniSharp.Roslyn.CSharp.Services.Navigation
                             };
                         }
                     }
+                    else if (location.IsInMetadata && request.Disassemble)
+                    {
+						var compilation = await document.Project.GetCompilationAsync();
+						var metadataRef = compilation.GetMetadataReference(symbol.ContainingAssembly) as PortableExecutableReference;
+						if (metadataRef != null) {
+							// The metadata reference is from in-memory stream so we cannot use its FilePath property directly: var filepath = metadataRef.FilePath;
+							var filepath = _metadataCache.GetFilePath(metadataRef);
+							if (filepath != null) {
+								var xmlId = symbol.GetDocumentationCommentId();
+								Process.Start(@"c:\tools\dnspy\dnspy.exe", $"\"{filepath}\" --select \"{xmlId}\"");
+							}
+						}
+						return null;
+					}
                 }
             }
 

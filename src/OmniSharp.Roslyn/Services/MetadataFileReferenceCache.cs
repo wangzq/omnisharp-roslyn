@@ -50,11 +50,16 @@ namespace OmniSharp.Services
             var documentationFile = Path.ChangeExtension(path, ".xml");
             if (File.Exists(documentationFile))
             {
-                return metadata.GetReference(new XmlDocumentationProvider(documentationFile));
+                return metadata.GetReference(new XmlDocumentationProvider(documentationFile)).SetProperty("FilePath", path);
             }
 
-            return metadata.GetReference();
+            return metadata.GetReference().SetProperty("FilePath", path);
         }
+
+		public string GetFilePath(MetadataReference metadata)
+		{
+			return (string) metadata.GetProperty("FilePath");
+		}
 
         private class FileWriteTimeTrigger : IChangeToken
         {
