@@ -80,10 +80,19 @@ namespace OmniSharp.Roslyn.CSharp.Services.Navigation
                             };
                         }
                     }
-                    else if (location.IsInMetadata && request.Disassemble)
+                    else if (location.IsInMetadata)
                     {
+						// This is an experiment, to see if we can jump to the disassembled source code of a symbol.
+						// Ideally we should return the assembly file path and xml id and let the client to determine
+						// how to locate the symbol in a disassembler, but this also means we need to modify the client
+						// code to see the effect. Besides, this is mainly written for my own use in Vim. Currently this 
+						// will work in Visual Studio Code without changes, but you will find DnSpy will be invoked whenever
+						// you hold Control key and hover on some symbols only in metadata.
+						//
+                        // How to get MetadataReference from IAssemblySymbol: https://github.com/dotnet/roslyn/issues/7764
 						var compilation = await document.Project.GetCompilationAsync();
 						var metadataRef = compilation.GetMetadataReference(symbol.ContainingAssembly) as PortableExecutableReference;
+                        
 						if (metadataRef != null) {
 							// The metadata reference is from in-memory stream so we cannot use its FilePath property directly: var filepath = metadataRef.FilePath;
 							var filepath = _metadataCache.GetFilePath(metadataRef);
@@ -92,7 +101,6 @@ namespace OmniSharp.Roslyn.CSharp.Services.Navigation
 								Process.Start(@"c:\tools\dnspy\dnspy.exe", $"\"{filepath}\" --select \"{xmlId}\"");
 							}
 						}
-						return null;
 					}
                 }
             }
