@@ -95,7 +95,7 @@ namespace OmniSharp.Roslyn.CSharp.Services.Navigation
                         
 						if (metadataRef != null) {
 							// The metadata reference is from in-memory stream so we cannot use its FilePath property directly: var filepath = metadataRef.FilePath;
-							var filepath = _metadataCache.GetFilePath(metadataRef);
+							var filepath = _metadataCache?.GetFilePath(metadataRef);
 							if (filepath != null) {
 								var xmlId = symbol.GetDocumentationCommentId();
 								Process.Start(@"c:\tools\dnspy\dnspy.exe", $"\"{filepath}\" --select \"{xmlId}\"");
