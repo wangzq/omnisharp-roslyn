@@ -111,6 +111,7 @@ ExitStatus Run(string exec, string args, string workingDirectory)
 /// <returns>The exit status for further queries</returns>
 ExitStatus Run(string exec, string args, RunOptions runOptions)
 {
+	Console.WriteLine($"{exec} {args}");
     var workingDirectory = runOptions.WorkingDirectory ?? System.IO.Directory.GetCurrentDirectory();
     var process = System.Diagnostics.Process.Start(
             new ProcessStartInfo(exec, args)
