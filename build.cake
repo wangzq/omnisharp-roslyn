@@ -23,7 +23,7 @@ var workingDirectory = System.IO.Directory.GetCurrentDirectory();
 
 // System specific shell configuration
 var shell = IsRunningOnWindows() ? "powershell" : "bash";
-var shellArgument = IsRunningOnWindows() ? "/Command" : "-C";
+var shellArgument = IsRunningOnWindows() ? "-NoProfile /Command" : "-C";
 var shellExtension = IsRunningOnWindows() ? "ps1" : "sh";
 
 /// <summary>
@@ -97,7 +97,7 @@ Task("PopulateRuntimes")
 {
     if (IsRunningOnWindows())
     {
-        buildPlan.Rids = new string[] {"default", "win7-x86"};
+        buildPlan.Rids = new string[] {"default"};
     }
     else if (string.Equals(Environment.GetEnvironmentVariable("TRAVIS_OS_NAME"), "linux"))
     {
@@ -105,9 +105,12 @@ Task("PopulateRuntimes")
             {
                 "default", // To allow testing the published artifact
                 "ubuntu.14.04-x64",
+                "ubuntu.16.04-x64",
                 "centos.7-x64",
                 "rhel.7.2-x64",
-                "debian.8.2-x64"
+                "debian.8-x64",
+                "fedora.23-x64",
+                "opensuse.13.2-x64"
             };
     }
     else
@@ -464,7 +467,7 @@ Task("Local")
 Task("Travis")
     .IsDependentOn("Cleanup")
     .IsDependentOn("Restore")
-    .IsDependentOn("LocalPublish")
+    .IsDependentOn("AllPublish")
     .IsDependentOn("TestPublished")
     .Does(() =>
 {

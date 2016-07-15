@@ -20,8 +20,20 @@ string GetBuildIdentifier(string runtime, string framework)
     }
     else
     {
-        // Remove version number
-        runtimeShort = Regex.Replace(runtime, "(\\d|\\.)*-", "-");
+        // Remove version number. Note: because there are separate versions for Ubuntu 14 and 16,
+        // we treat Ubuntu as a special case.
+        if (runtime.StartsWith("ubuntu.14"))
+        {
+            runtimeShort = "ubuntu14-x64";
+        }
+        else if (runtime.StartsWith("ubuntu.16"))
+        {
+            runtimeShort = "ubuntu16-x64";
+        }
+        else
+        {
+            runtimeShort = Regex.Replace(runtime, "(\\d|\\.)*-", "-");
+        }
     }
 
     // Rename/restrict some archive names on CI
@@ -59,17 +71,17 @@ void DoArchive(string runtime, string contentFolder, string archiveName)
     // On all platforms use ZIP for Windows runtimes
     if (runtime.Contains("win") || (runtime.Equals("default") && IsRunningOnWindows()))
     {
-        var zipFile = System.IO.Path.ChangeExtension(archiveName, "zip");
+        var zipFile = $"{archiveName}.zip";
         Zip(contentFolder, zipFile);
     }
     // On all platforms use TAR.GZ for Unix runtimes
     else
     {
-        var tarFile = System.IO.Path.ChangeExtension(archiveName, "tar.gz");
+        var tarFile = $"{archiveName}.tar.gz";
         // Use 7z to create TAR.GZ on Windows
         if (IsRunningOnWindows())
         {
-            var tempFile = System.IO.Path.ChangeExtension(archiveName, "tar");
+            var tempFile = $"{archiveName}.tar";
             try
             {
                 Run("7z", $"a \"{tempFile}\"", contentFolder)
