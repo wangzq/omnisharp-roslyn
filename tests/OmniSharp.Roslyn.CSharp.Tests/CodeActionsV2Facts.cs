@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using OmniSharp.Models.V2;
+using OmniSharp.Roslyn.CSharp.Services;
 using OmniSharp.Roslyn.CSharp.Services.CodeActions;
 using OmniSharp.Roslyn.CSharp.Services.Refactoring.V2;
 using OmniSharp.Services;
@@ -15,7 +16,7 @@ namespace OmniSharp.Roslyn.CSharp.Tests
 {
     /*
         Test todo list:
-        
+
         * Sort Using was removed with NRefactory
             var source =
                   @"using MyNamespace3;
@@ -31,7 +32,7 @@ namespace OmniSharp.Roslyn.CSharp.Tests
                     using MyNamespace3;
                     using MyNamespace4;";
      */
-    
+
     public class CodingActionsV2Facts : IClassFixture<RoslynTestFixture>
     {
         private readonly string BufferPath = $"{Path.DirectorySeparatorChar}somepath{Path.DirectorySeparatorChar}buffer.cs";
@@ -63,7 +64,7 @@ namespace OmniSharp.Roslyn.CSharp.Tests
             }
         }
 
-        private async Task<OmnisharpWorkspace> GetOmniSharpWorkspace(Models.Request request)
+        private async Task<OmnisharpWorkspace> GetOmniSharpWorkspace(OmniSharp.Models.Request request)
         {
             if (_omnisharpWorkspace == null)
             {
@@ -183,7 +184,7 @@ namespace OmniSharp.Roslyn.CSharp.Tests
                   {
                   }
               }";
-            
+
             AssertIgnoringIndent(expected, change.Changes.First().NewText);
             source =
                 @"namespace MyNamespace
@@ -309,8 +310,9 @@ namespace OmniSharp.Roslyn.CSharp.Tests
         private IEnumerable<ICodeActionProvider> CreateCodeActionProviders()
         {
             var loader = _fixture.CreateAssemblyLoader(_fixture.FakeLogger);
-            
-            yield return new RoslynCodeActionProvider(loader);
+            var hostServicesProvider = new RoslynFeaturesHostServicesProvider(loader);
+
+            yield return new RoslynCodeActionProvider(hostServicesProvider);
         }
     }
 }
